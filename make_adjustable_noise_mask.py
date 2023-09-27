@@ -92,10 +92,9 @@ def play_and_adjust_volume(mean, standard_deviation, initial_volume_dB):
 
         # If the SOX process isn't already playing, start it
         if not sox_sink_input:
-            # eliminating loud noise at beginning from previous command:
-            # command = f"play -n synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1"
+            # Eliminating loud noise at beginning from previous command:
+            #     play -n synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1
             command = f"play -n trim 0.0 2.0 : synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1"
-            print(command)
             subprocess.Popen(command, shell=True)
 
             time.sleep(0.2)  # Give time for the new play process to show up
@@ -131,8 +130,16 @@ def main():
     if not os.path.exists("data"):
         os.makedirs("data")
 
-    # Comment/Uncomment the below line if you wish to record audio
-    # record_audio()
+    while True:
+        user_input = input("Record new audio or use the old one? [n/o]\n")
+        if user_input == "o":
+            print("Using old audio...")
+            break
+        elif user_input == "n":
+            record_audio()
+            break
+        else:
+            print('You didn\'t type "n" for new or "o" for old. Please try again.')
 
     # Generate spectrogram and fetch audio statistics
     generate_spectrogram()
@@ -142,13 +149,23 @@ def main():
     frequency, amplitude = np.loadtxt("data/data.txt", unpack=True)
     mean_amplitude = np.mean(amplitude)
     volume_dB = 10 * np.log10(mean_amplitude)
-    mean = np.average(frequency, weights=amplitude)
+
+    # Check if the sum of amplitude is zero
+    if np.sum(amplitude) == 0:
+        raise ValueError(
+            "Error: The microphone was not turned on or there's no audio input signal."
+        )
+    else:
+        mean = np.average(frequency, weights=amplitude)
+
     standard_deviation = np.sqrt(np.average((frequency - mean) ** 2, weights=amplitude))
 
     # Print the calculated values
     print("\nMean Frequency:", mean)
     print("Standard Deviation:", standard_deviation)
     print("Volume (dB):", volume_dB)
+    print("")
+    print("Please use Control + c or other SIGINT to exit gracefully.")
 
     # Play the noise and adjust volume
     play_and_adjust_volume(mean, standard_deviation, volume_dB)
