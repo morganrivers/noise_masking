@@ -114,8 +114,8 @@ def main():
     if not os.path.exists("data"):
         os.makedirs("data")
 
-    # Uncomment the below line if you wish to record audio
-    # record_audio()
+    # Comment/Uncomment the below line if you wish to record audio
+    record_audio()
 
     # Generate spectrogram and fetch audio statistics
     generate_spectrogram()
