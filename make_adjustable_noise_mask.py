@@ -57,11 +57,19 @@ def db_to_linear(dB):
     return 10 ** (dB / 20)
 
 
-def get_new_volume(volume_percentage, is_muted, db_in):
-    volume_adjustment = (-db_in) * 4
+def get_new_volume(volume_percentage, is_muted):
     volume_adjustment = 0
-    # so -10 would add 20%
-    return 0 if is_muted else ((volume_percentage + volume_adjustment) / 100.0)
+    return 0 if is_muted else (volume_percentage / 100.0)
+
+
+def set_volume(volume_percentage, is_muted, pulse, sox_sink_input):
+    new_volume = get_new_volume(volume_percentage, is_muted)
+
+    new_volume_info = pulsectl.PulseVolumeInfo(
+        new_volume, channels=len(sox_sink_input.volume.values)
+    )
+
+    pulse.volume_set(sox_sink_input, new_volume_info)
 
 
 # Function to play noise and adjust its volume based on system volume
@@ -82,17 +90,16 @@ def play_and_adjust_volume(mean, standard_deviation, initial_volume_dB):
             None,
         )
 
-        db_in = initial_volume_dB
-        # db_in = -30
-
         # If the SOX process isn't already playing, start it
         if not sox_sink_input:
-            command = f"play -n trim 0.0 2.0 : synth noise band {mean} {standard_deviation} vol {db_in}dB > /dev/null 2>&1"
-
-            # command = f"play -n synth noise band {mean} {standard_deviation} vol {db_in}dB > /dev/null 2>&1"
+            # eliminating loud noise at beginning from previous command:
+            # command = f"play -n synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1"
+            command = f"play -n trim 0.0 2.0 : synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1"
             print(command)
             subprocess.Popen(command, shell=True)
+
             time.sleep(0.2)  # Give time for the new play process to show up
+
             sox_sink_input = next(
                 (
                     si
@@ -110,20 +117,12 @@ def play_and_adjust_volume(mean, standard_deviation, initial_volume_dB):
         initial_sink_volume = sox_sink_input.volume.value_flat
 
         # Set the playback volume based on the system volume
-        new_volume = get_new_volume(volume_percentage, is_muted, db_in)
-        new_volume_info = pulsectl.PulseVolumeInfo(
-            new_volume, channels=len(sox_sink_input.volume.values)
-        )
-        pulse.volume_set(sox_sink_input, new_volume_info)
+        set_volume(volume_percentage, is_muted, pulse, sox_sink_input)
 
         # Continuously adjust the playback volume based on system volume
         while True:
             volume_percentage, is_muted = get_system_volume()
-            new_volume = get_new_volume(volume_percentage, is_muted, db_in)
-            new_volume_info = pulsectl.PulseVolumeInfo(
-                new_volume, channels=len(sox_sink_input.volume.values)
-            )
-            pulse.volume_set(sox_sink_input, new_volume_info)
+            set_volume(volume_percentage, is_muted, pulse, sox_sink_input)
             time.sleep(0.5)
 
 
