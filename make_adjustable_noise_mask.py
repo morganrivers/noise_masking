@@ -129,17 +129,21 @@ def main():
     # Create data directory if it doesn't exist
     if not os.path.exists("data"):
         os.makedirs("data")
-
-    while True:
-        user_input = input("Record new audio or use the old one? [r/o]\n")
-        if user_input == "r":
-            record_audio()
-            break
-        elif user_input == "o":
-            print("Using old audio...")
-            break
-        else:
-            print('You didn\'t type "r" for record or "o" for old. Please try again.')
+    if os.path.isfile("data/data.txt"):
+        while True:
+            user_input = input("Record new audio or use the old one? [r/o]\n")
+            if user_input == "r":
+                record_audio()
+                break
+            elif user_input == "o":
+                print("Using old audio...")
+                break
+            else:
+                print(
+                    'You didn\'t type "r" for record or "o" for old. Please try again.'
+                )
+    else:
+        record_audio()
 
     # Generate spectrogram and fetch audio statistics
     generate_spectrogram()
