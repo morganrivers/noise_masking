@@ -92,9 +92,16 @@ def play_and_adjust_volume(mean, standard_deviation, initial_volume_dB):
 
         # If the SOX process isn't already playing, start it
         if not sox_sink_input:
+            # reduce by 10db... it's a bit too loud generally without doing this
+            reduced_volume = initial_volume_dB - 20
+
+            # This actually renders the noise using the sox package.
             # Eliminating loud noise at beginning from previous command:
             #     play -n synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1
-            command = f"play -n trim 0.0 2.0 : synth noise band {mean} {standard_deviation} vol {initial_volume_dB}dB > /dev/null 2>&1"
+            command = f"play -n trim 0.0 2.0 : synth noise band {mean} {standard_deviation} \
+                        vol {reduced_volume}dB \
+                        > /dev/null 2>&1"  # don't show errors or stdout
+
             subprocess.Popen(command, shell=True)
 
             time.sleep(0.2)  # Give time for the new play process to show up
