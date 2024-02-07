@@ -10,6 +10,11 @@ import pulsectl
 import time
 import signal
 import sys
+import time
+import shutil
+
+t = time.localtime()
+time_str = f"{t.tm_year}_{t.tm_mon}_{t.tm_mday}_{t.tm_hour}_{t.tm_min}"
 
 
 # This function handles graceful exit when Ctrl+C is pressed.
@@ -35,12 +40,16 @@ def get_system_volume():
 def record_audio(duration=10):
     print(f"Recording {duration} seconds of audio...")
     subprocess.run(f"arecord -d {duration} -f cd data/input.wav", shell=True)
+    # copy as a record for the future
+    shutil.copy("data/input.wav", f"data/input_{time_str}.wav")
 
 
 # Function to generate a spectrogram from an audio file using SOX
 def generate_spectrogram():
     print("Generating spectrogram...")
-    subprocess.run("sox data/input.wav -n spectrogram -o data/spectrum.png", shell=True)
+    subprocess.run(
+        f"sox data/input.wav -n spectrogram -o data/spectrum.png", shell=True
+    )
 
 
 # Function to fetch audio statistics using SOX
