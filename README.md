@@ -31,6 +31,20 @@ pip3 install numpy matplotlib pulsectl
 sudo apt-get install sox alsa-utils
 ```
 
+### OSx
+
+Make sure you have `sox`:
+
+```bash
+brew install sox
+
+# Install required Python libraries
+pip3 install numpy matplotlib pulsectl
+```
+
+OSx users can't exit gracefuly. To exist use a `SIGTERM` application and copy the `pid` printed in the terminal.
+
+
 ### Other Operating Systems
 
 Please refer to the official websites for installation instructions on other operating systems:
