@@ -3,18 +3,17 @@ A Python script to generate noise using SOX based on audio statistics.
 The generated noise will adjust its volume based on the system's volume setting.
 """
 
-import os
 import numpy as np
-import subprocess
-import pulsectl
-import time
+import os
+import platform
 import signal
+import shutil
+import subprocess
 import sys
 import time
-import shutil
 
-t = time.localtime()
-time_str = f"{t.tm_year}_{t.tm_mon}_{t.tm_mday}_{t.tm_hour}_{t.tm_min}"
+if sys.platform.startswith("linux"):
+    import pulsectl
 
 
 # This function handles graceful exit when Ctrl+C is pressed.
@@ -27,7 +26,6 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-# Function to fetch the system's volume and mute status
 def get_system_volume():
     result = subprocess.run(["amixer", "sget", "Master"], stdout=subprocess.PIPE)
     output = result.stdout.decode()
@@ -36,12 +34,27 @@ def get_system_volume():
     return volume, is_muted
 
 
-# Function to record audio using 'arecord'
+def set_system_volume(volume):
+    """Set the system volume. Volume should be an integer between 0 and 100."""
+    result = subprocess.run(["amixer", "sget", "Master"], stdout=subprocess.PIPE)
+    output = result.stdout.decode()
+    volume = int(output.split("[")[1].split("%")[0])
+    is_muted = "off" in output
+    return volume, is_muted
+
+
 def record_audio(duration=10):
-    print(f"Recording {duration} seconds of audio...")
     subprocess.run(f"arecord -d {duration} -f cd data/input.wav", shell=True)
     # copy as a record for the future
     shutil.copy("data/input.wav", f"data/input_{time_str}.wav")
+
+
+# Function to record audio using 'arecord'
+def record_audio_osx(duration=10):
+    print(f"Recording {duration} seconds of audio...")
+    filename = f"data/input.wav"
+    subprocess.run(f"sox -d {filename} trim 0 {duration}", shell=True)
+    print(f"Audio recorded and saved as {filename}")
 
 
 # Function to generate a spectrogram from an audio file using SOX
@@ -79,6 +92,16 @@ def set_volume(volume_percentage, is_muted, pulse, sox_sink_input):
     )
 
     pulse.volume_set(sox_sink_input, new_volume_info)
+
+
+def play_noise_osx(mean, standard_deviation, volume_dB):
+    """Play noise using sox with specified parameters and return the subprocess."""
+    volume_adjustment = volume_dB  # Use the calculated volume or set a preferred level
+    command = f"play -n synth noise band {mean} {standard_deviation} vol {volume_adjustment}dB"
+    print("Playing noise. Press Ctrl+C to stop.")
+    process = subprocess.Popen(command, shell=True)
+    print("process.pid: ", process.pid)
+    return process
 
 
 # Function to play noise and adjust its volume based on system volume
@@ -141,7 +164,19 @@ def play_and_adjust_volume(mean, standard_deviation, initial_volume_dB):
             time.sleep(0.5)
 
 
+def identify_os():
+    if sys.platform.startswith("darwin"):
+        return "OS X (macOS)"
+    elif sys.platform.startswith("linux"):
+        return "Linux"
+    else:
+        return "Unsupported OS, feel free to open an issue here https://github.com/morganrivers/noise_masking"
+
+
 def main():
+    # Check OS validity
+    identify_os()
+
     # Create data directory if it doesn't exist
     if not os.path.exists("data"):
         os.makedirs("data")
@@ -149,8 +184,12 @@ def main():
         while True:
             user_input = input("Record new audio or use the old one? [r/o]\n")
             if user_input == "r":
-                record_audio()
-                break
+                if sys.platform.startswith("darwin"):
+                    record_audio_osx()
+                    break
+                elif sys.platform.startswith("linux"):
+                    record_audio()
+                    break
             elif user_input == "o":
                 print("Using old audio...")
                 break
@@ -188,7 +227,10 @@ def main():
     print("Please use Control + c or other SIGINT to exit gracefully.")
 
     # Play the noise and adjust volume
-    play_and_adjust_volume(mean, standard_deviation, volume_dB)
+    if sys.platform.startswith("darwin"):
+        play_noise_osx(mean, standard_deviation, volume_dB)
+    elif sys.platform.startswith("linux"):
+        play_and_adjust_volume(mean, standard_deviation, volume_dB)
 
 
 if __name__ == "__main__":
