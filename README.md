@@ -1,6 +1,6 @@
 # noise_masking
 
-This script records audio, generates a spectrogram, fetches audio statistics, and plays back audio with adjusted volume in real-time based on the system volume. It's great for blocking voices at coffee shops and communal spaces, but it doesn't have to be very loud as it focuses the audion only on the frequency range that is the loudest in the environment. It works great in combination with noise-cancelling headphones.
+This script records audio, generates a spectrogram, fetches audio statistics, and plays back audio with adjusted volume in real-time based on the system volume. It's great for blocking voices at coffee shops and communal spaces, but it doesn't have to be very loud as it focuses the audio only on the frequency range that is the loudest in the environment. It works great in combination with noise-cancelling headphones.
 
 WATCH OUT FOR YOUR EARS RUNNING THE SCRIPT THE FIRST TIME! IT MIGHT BE LOUD
 
