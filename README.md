@@ -50,7 +50,7 @@ python3 make_adjustable_noise_mask.py
 
 ## Usage
 
-Run the script, and it will automatically record audio, generate a spectrogram, fetch audio statistics, and play back audio with volume adjusted in real-time based on your system volume. The script is intended to be used as is, and further modification might be required for more specific use cases.
+Run the script, and it will automatically record audio, generate a spectrogram, fetch audio statistics, and play back audio with volume adjusted in real-time based on your system volume.
 
 It adjusts to alterations of system volume every half second.
 
