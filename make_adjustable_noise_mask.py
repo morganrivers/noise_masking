@@ -12,8 +12,12 @@ import subprocess
 import sys
 import time
 
+
 if sys.platform.startswith("linux"):
     import pulsectl
+
+    t = time.localtime()
+    time_str = f"{t.tm_year}_{t.tm_mon}_{t.tm_mday}_{t.tm_hour}_{t.tm_min}"
 
 
 # This function handles graceful exit when Ctrl+C is pressed.
